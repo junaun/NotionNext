@@ -1,54 +1,56 @@
-import BLOG from 'blog.config'
-import 'animate.css'
+import '@/styles/animate.css' // @see https://animate.style/
 import '@/styles/globals.css'
-// custom
+import '@/styles/nprogress.css'
+import '@/styles/utility-patterns.css'
+
 // core styles shared by all of react-notion-x (required)
 import 'react-notion-x/src/styles.css'
 import '@/styles/notion.css' //  重写部分样式
 
-// used for collection views (optional)
-// import 'rc-dropdown/assets/index.css'
-import 'prismjs/themes/prism-tomorrow.min.css'
-import 'react-notion-x/build/third-party/equation.css'
-
-// waline 评论插件
-import '@waline/client/dist/waline.css'
-
-import dynamic from 'next/dynamic'
 import { GlobalContextProvider } from '@/lib/global'
-import { DebugPanel } from '@/components/DebugPanel'
-import { ThemeSwitch } from '@/components/ThemeSwitch'
-import { Fireworks } from '@/components/Fireworks'
 
-const Ackee = dynamic(() => import('@/components/Ackee'), { ssr: false })
-const Gtag = dynamic(() => import('@/components/Gtag'), { ssr: false })
-const Busuanzi = dynamic(() => import('@/components/Busuanzi'), { ssr: false })
-const GoogleAdsense = dynamic(() => import('@/components/GoogleAdsense'), {
-  ssr: false
-})
-const Messenger = dynamic(() => import('@/components/FacebookMessenger'), {
-  ssr: false
-})
+import AOS from 'aos'
+import 'aos/dist/aos.css' // You can also use <link> for styles
+import dynamic from 'next/dynamic'
+import { isBrowser, loadExternalResource } from '@/lib/utils'
+import BLOG from '@/blog.config'
+
+// 各种扩展插件 动画等
+const ExternalPlugins = dynamic(() => import('@/components/ExternalPlugins'))
 
 const MyApp = ({ Component, pageProps }) => {
-  // 外部插件
-  const externalPlugins = <>
-        {JSON.parse(BLOG.THEME_SWITCH) && <ThemeSwitch />}
-        {JSON.parse(BLOG.DEBUG) && <DebugPanel />}
-        {BLOG.ANALYTICS_ACKEE_TRACKER && <Ackee />}
-        {BLOG.ANALYTICS_GOOGLE_ID && <Gtag />}
-        {JSON.parse(BLOG.ANALYTICS_BUSUANZI_ENABLE) && <Busuanzi />}
-        {BLOG.ADSENSE_GOOGLE_ID && <GoogleAdsense />}
-        {BLOG.FACEBOOK_APP_ID && BLOG.FACEBOOK_PAGE_ID && <Messenger />}
-        {JSON.parse(BLOG.FIREWORKS) && <Fireworks/>}
-    </>
+  // 自定义样式css和js引入
+  if (isBrowser) {
+    // 初始化AOS动画
+    AOS.init()
+    // 静态导入本地自定义样式
+    loadExternalResource('/css/custom.css', 'css')
+    loadExternalResource('/js/custom.js', 'js')
+
+    // 自动添加图片阴影
+    if (BLOG.IMG_SHADOW) {
+      loadExternalResource('/css/img-shadow.css', 'css')
+    }
+
+    // 导入外部自定义脚本
+    if (BLOG.CUSTOM_EXTERNAL_JS && BLOG.CUSTOM_EXTERNAL_JS.length > 0) {
+      for (const url of BLOG.CUSTOM_EXTERNAL_JS) {
+        loadExternalResource(url, 'js')
+      }
+    }
+
+    // 导入外部自定义样式
+    if (BLOG.CUSTOM_EXTERNAL_CSS && BLOG.CUSTOM_EXTERNAL_CSS.length > 0) {
+      for (const url of BLOG.CUSTOM_EXTERNAL_CSS) {
+        loadExternalResource(url, 'css')
+      }
+    }
+  }
 
   return (
-        <GlobalContextProvider>
-            {/* FontawesomeCDN */}
-            <link rel="stylesheet" href={BLOG.FONT_AWESOME_PATH} referrerPolicy="no-referrer" />
-            {externalPlugins}
+        <GlobalContextProvider {...pageProps}>
             <Component {...pageProps} />
+            <ExternalPlugins {...pageProps} />
         </GlobalContextProvider>
   )
 }
